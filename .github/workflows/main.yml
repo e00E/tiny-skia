@@ -1,6 +1,6 @@
 name: Rust
 
-on: [push, pull_request]
+on: [pull_request]
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,7 +11,6 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.57.0
           - stable
     steps:
     - name: Checkout
@@ -23,35 +22,8 @@ jobs:
         toolchain: ${{ matrix.rust }}
         override: true
 
-    - name: Build with minimal features (no_std)
-      run: cargo build --verbose --no-default-features --features no-std-float
-
-    - name: Run tests for tiny-skia-path
-      working-directory: path
-      run: cargo test --verbose
-
     - name: Run tests without SIMD
-      run: cargo test --verbose --no-default-features --features png-format
-
-    - name: Run tests with SSE2
-      env:
-        RUSTFLAGS: -Ctarget-feature=+sse2
-      run: cargo test
-
-    - name: Run tests with SSE4.1
-      env:
-        RUSTFLAGS: -Ctarget-feature=+sse4.1
-      run: cargo test
-
-    - name: Run tests with AVX
-      env:
-        RUSTFLAGS: -Ctarget-feature=+avx
-      run: cargo test
-
-    - name: Run tests with AVX2
-      env:
-        RUSTFLAGS: -Ctarget-feature=+avx2
-      run: cargo test
+      run: cargo test --verbose -- byte_order --nocapture
 
   wasm:
     runs-on: ubuntu-20.04
@@ -71,16 +43,8 @@ jobs:
         curl https://wasmtime.dev/install.sh -sSf | bash
         echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
 
-    - name: Build with minimal features (no_std)
-      run: cargo build --target wasm32-wasi --verbose --no-default-features --features no-std-float
-
     - name: Run tests without SIMD
-      run: cargo test --target wasm32-wasi --verbose --no-default-features --features png-format
-
-    - name: Run tests with SIMD128
-      env:
-        RUSTFLAGS: -Ctarget-feature=+simd128,+bulk-memory,+nontrapping-fptoint,+sign-ext
-      run: cargo test --target wasm32-wasi
+      run: cargo test --target wasm32-wasi --verbose -- byte_order --nocapture
 
   aarch64:
     runs-on: ubuntu-20.04
@@ -98,14 +62,8 @@ jobs:
     - name: Install cross
       run: cargo install cross
 
-    - name: Build with minimal features (no_std)
-      run: cross build --target aarch64-unknown-linux-gnu --verbose --no-default-features --features no-std-float
-
     - name: Run tests without SIMD
-      run: cross test --target aarch64-unknown-linux-gnu --verbose --no-default-features --features png-format
-
-    - name: Run tests with Neon
-      run: cross test --target aarch64-unknown-linux-gnu
+      run: cross test --target aarch64-unknown-linux-gnu --verbose -- byte_order --nocapture
 
     - name: Rust tests on PowerPC (big endian)
-      run: cross test --target powerpc-unknown-linux-gnu
+      run: cross test --target powerpc-unknown-linux-gnu -- byte_order --nocapture

@@ -4,6 +4,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#[test]
+fn byte_order() {
+    use std::*;
+    let little_endian = cfg!(target_endian = "little");
+    if !little_endian {
+        assert!(cfg!(target_endian = "big"));
+    }
+    dbg!(little_endian);
+
+    let c = PremultipliedColorU8::from_rgba(1, 2, 3, 4).unwrap();
+    dbg!(c);
+    let ne = c.get().to_ne_bytes();
+    let le = c.get().to_le_bytes();
+    let be = c.get().to_be_bytes();
+    dbg!(ne, le, be);
+    let slice: &[PremultipliedColorU8] = &[c];
+    let casted: &[u8] = bytemuck::cast_slice(slice);
+    dbg!(casted);
+    assert_eq!(casted, &[1, 2, 3, 4]);
+}
+
 use tiny_skia_path::{NormalizedF32, Scalar};
 
 /// 8-bit type for an alpha value. 255 is 100% opaque, zero is 100% transparent.
